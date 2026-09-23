@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pagamento Pix — Tawf Tecnologia</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#07152f;color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.card{width:min(430px,100%);background:#0d2144;border:1px solid #1e4072;border-radius:22px;padding:28px;box-shadow:0 18px 50px #0008;text-align:center}
+h1{margin:0 0 8px;font-size:25px}.sub{color:#aebed8;margin-bottom:24px}
+label{display:block;text-align:left;font-size:14px;color:#b9c8df;margin-bottom:8px}
+input{width:100%;padding:16px;border-radius:12px;border:1px solid #365a8c;background:#07152f;color:#fff;font-size:22px;outline:none}
+button{width:100%;margin-top:14px;padding:15px;border:0;border-radius:12px;background:#1478ff;color:#fff;font-size:17px;font-weight:700;cursor:pointer}
+button.secondary{background:#17365f}
+#result{display:none;margin-top:22px}.qr{width:240px;height:240px;background:#fff;margin:18px auto;padding:10px;border-radius:12px}
+.qr img{width:100%;height:100%;display:block}.code{font-size:11px;word-break:break-all;color:#9fb2ce;text-align:left;background:#07152f;padding:12px;border-radius:10px;max-height:100px;overflow:auto}
+.ok{color:#79d6a3;margin-top:10px;min-height:20px}.small{font-size:12px;color:#879bb8;margin-top:18px}
+</style>
+</head>
+<body>
+<main class="card">
+<h1>💙 Tawf Tecnologia</h1>
+<div class="sub">Pagamento via Pix</div>
+<label for="valor">Digite o valor que deseja pagar</label>
+<input id="valor" inputmode="decimal" placeholder="R$ 0,00" autocomplete="off">
+<button id="gerar">Gerar Pix</button>
+<section id="result">
+<div class="qr"><img id="qr" alt="QR Code Pix"></div>
+<button id="copiar" class="secondary">Copiar Pix Copia e Cola</button>
+<div id="msg" class="ok"></div>
+<div id="code" class="code"></div>
+</section>
+<div class="small">Chave Pix: 35 99856-0155</div>
+</main>
+<script>
+const key="+5535998560155", merchant="TAWF TECNOLOGIA", city="BOTELHOS";
+function tlv(id,v){return id+String(v.length).padStart(2,"0")+v}
+function crc16(s){let crc=0xFFFF;for(let i=0;i<s.length;i++){crc^=s.charCodeAt(i)<<8;for(let j=0;j<8;j++)crc=(crc&0x8000)?((crc<<1)^0x1021)&0xFFFF:(crc<<1)&0xFFFF}return crc.toString(16).toUpperCase().padStart(4,"0")}
+function pixPayload(amount){
+ const mai=tlv("00","BR.GOV.BCB.PIX")+tlv("01",key);
+ let p=tlv("00","01")+tlv("26",mai)+tlv("52","0000")+tlv("53","986");
+ if(amount) p+=tlv("54",amount);
+ p+=tlv("58","BR")+tlv("59",merchant)+tlv("60",city)+tlv("62",tlv("05","***"));
+ return p+"6304"+crc16(p+"6304");
+}
+function money(v){return Number(v.replace(/\./g,"").replace(",","."))}
+const valor=document.getElementById("valor"), result=document.getElementById("result"), qr=document.getElementById("qr"), code=document.getElementById("code"), msg=document.getElementById("msg");
+document.getElementById("gerar").onclick=()=>{
+ const n=money(valor.value.trim());
+ if(!Number.isFinite(n)||n<=0){msg.textContent="Digite um valor válido.";return}
+ const amount=n.toFixed(2);
+ const payload=pixPayload(amount);
+ qr.src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data="+encodeURIComponent(payload);
+ code.textContent=payload; result.style.display="block"; msg.textContent="Pix gerado para R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2});
+};
+document.getElementById("copiar").onclick=async()=>{
+ try{await navigator.clipboard.writeText(code.textContent);msg.textContent="Pix Copia e Cola copiado!";}catch(e){msg.textContent="Selecione e copie o código abaixo."}
+};
+</script>
+</body>
+</html>
